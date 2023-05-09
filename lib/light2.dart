@@ -1,4 +1,5 @@
 import "dart:convert";
+import "dart:io";
 import "dart:math";
 import "package:flutter/foundation.dart";
 import "package:flutter/material.dart";
@@ -6,6 +7,7 @@ import "package:iotproject/constants/colors.dart";
 import "package:iotproject/home.dart";
 import "package:http/http.dart" as http;
 import "package:html/dom.dart" as dom;
+import 'dart:async';
 
 class light2 extends StatefulWidget {
   light2({Key? key}) : super(key: key);
@@ -16,11 +18,27 @@ class light2 extends StatefulWidget {
 
 class _light2State extends State<light2> {
   @override
-  var a = "assets/lightoff.png";
-  var b = "assets/lighton.png";
-  var d = "assets/lighthi.png";
-  var c = "assets/lightoff.png";
+  var c = "lib/assets/lightlow.png";
+  var prev_state = "";
   var b00l = true;
+  late Timer t1;
+  var lreqtime = DateTime.now();
+  var ntime = DateTime.now();
+  var check = true;
+  var mantext = "MANUAL";
+  var autotext = "AUTO";
+  var deftext = "AUTO";
+  var manual_bool = true;
+
+  update() {
+    lreqtime = DateTime.now();
+    if (manual_bool == true) {
+      stater();
+    }
+
+    check = true;
+    ;
+  }
 
   void _lightsSwitchOn() {
     setState(() {
@@ -45,55 +63,83 @@ class _light2State extends State<light2> {
   }
 
   Future _lightsHi() async {
-    final url = Uri.parse("http://192.168.167.21/?led=CD");
-    final response = await http.get(url);
-    _lightsSwitchHi();
+    try {
+      final url = Uri.parse(ip + "/?l1hi");
+      final response1 = await http.get(url);
+      _lightsSwitchHi();
+    } catch (e) {}
   }
 
   Future _lightsOf() async {
-    final url = Uri.parse("http://192.168.167.21/?led=cd");
-    final response = await http.get(url);
-    _lightsSwitchOff();
+    try {
+      final url = Uri.parse(ip + "/?l1off");
+      final response1 = await http.get(url);
+      _lightsSwitchOff();
+    } catch (e) {}
   }
 
   Future _lightsMi() async {
-    final url = Uri.parse("http://192.168.167.21/?led=Cd");
-    final response = await http.get(url);
-    _lightsSwitchOn();
+    try {
+      final url = Uri.parse("$ip/?l1mid");
+      final response1 = await http.get(url);
+      _lightsSwitchOn();
+    } catch (e) {}
   }
 
   Future stater() async {
-    final url = Uri.parse("http://192.168.167.21");
-    final response = await http.get(url);
-    dom.Document html = dom.Document.html(response.body);
-    final titles = html
-        .querySelectorAll('body > p:nth-child(3)')
-        .map((element) => element.innerHtml.trim())
-        .toList();
-    for (final title in titles) {
-      print(titles);
-    }
-    var tits = titles[0].split(",");
+    if (check == true) {
+      print("start");
+      check = false;
+      print(check);
+      final url = Uri.parse(ip);
+      try {
+        final response = await http.get(url);
+        dom.Document html = dom.Document.html(response.body);
+        final titles = html
+            .querySelectorAll('body > p:nth-child(1)')
+            .map((element) => element.innerHtml.trim())
+            .toList();
+        var tits = titles[0].split(",");
+        for (final title in titles) {
+          print(tits[1]);
+        }
 
-    if (tits[1] == "cd") {
-      _lightsSwitchOff();
-      b00l = false;
-    }
+        if (tits[1] == "low") {
+          _lightsOf();
+          prev_state = "low";
+        }
 
-    if (tits[1] == "Cd") {
-      _lightsSwitchOn();
-      b00l = false;
+        if (tits[1] == "mid") {
+          _lightsMi();
+          prev_state = "mid";
+        }
+        if (tits[1] == "hi") {
+          _lightsHi();
+          prev_state = "hi";
+        }
+      } catch (e) {}
     }
-    if (tits[1] == "CD") {
-      _lightsSwitchHi();
-      b00l = false;
+  }
+
+  void manual() {
+    if (deftext == mantext) {
+      deftext = autotext;
+      setState(() {
+        manual_bool = true;
+      });
+    }
+    if (deftext == autotext) {
+      deftext = mantext;
+      setState(() {
+        manual_bool = false;
+      });
     }
   }
 
   Widget build(BuildContext context) {
-    if (b00l == true) {
-      stater();
-    }
+    Future.delayed(Duration(seconds: 5), () {
+      update();
+    });
     return Scaffold(
       appBar: AppBar(
         backgroundColor: grey,
@@ -101,7 +147,9 @@ class _light2State extends State<light2> {
         title: Text("LIGHT 2"),
       ),
       body: Column(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
-        Center(
+        Container(
+          width: 500,
+          height: 500,
           child: Image.asset(c),
         ),
         Center(
@@ -151,11 +199,10 @@ class _light2State extends State<light2> {
               style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.transparent, elevation: 0),
               onPressed: () {
-                Navigator.push(
-                    context, MaterialPageRoute(builder: (context) => home()));
+                manual();
               },
               child: Text(
-                "MAP",
+                deftext,
                 style: TextStyle(fontSize: 20, color: Colors.black),
               )),
         )

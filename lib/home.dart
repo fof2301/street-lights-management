@@ -33,7 +33,7 @@ class home extends StatelessWidget {
                         MaterialPageRoute(builder: (context) => lighter()));
                   },
                   child: Image.asset(
-                    "assets/map.png",
+                    "lib/assets/map.png",
                   )))
         ],
       ),
