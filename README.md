@@ -2,7 +2,7 @@
 
 Flutter App to manage street lights
 
-## Getting Started
+## ABOUT
 
 This project interfaces the app to the raspberry pi pico w server. 
 
