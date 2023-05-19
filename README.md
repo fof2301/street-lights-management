@@ -1,6 +1,7 @@
-# iotproject
+# iotproject based project
 
 Flutter App to manage street lights
+Raspberry pi webserver for backend and controlling street lights
 
 ## ABOUT
 
