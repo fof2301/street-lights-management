@@ -14,10 +14,13 @@ led_3 = Pin(11, Pin.OUT)
 led_1_State = 'LED State Unknown'
 led_2_State = 'LED State Unknown'
 led_3_State = 'LED State Unknown'
+ldr_state=""
+led_h = machine.ADC(26)
+
 
 
 auto = False
-
+em=0
 ssid = 'Fof'
 password = '12345678'
 
@@ -58,10 +61,19 @@ s = socket.socket()
 s.bind(addr)
 s.listen(1)
 print('listening on', addr)
-
-# Listen for connections, serve client
+health="ok"
+# Listen for connections, s erve client
 while True:
-    try:       
+    try:
+        print(led_h.read_u16())
+        if(led_3.value()==1 and led_h.read_u16()==65535 and em==0):
+            em=1
+            health="fault"
+        elif(led_3.value()==1 and led_h.read_u16()!=65535 and em==1):
+            em=0
+            health="ok"
+            
+        
         cl, addr = s.accept()
         print('client connected from', addr)
         request = cl.recv(1024)
@@ -92,6 +104,8 @@ while True:
         led_2_State = "0" if led_2.value() == 0 else "1" # a compact if-else statement
         led_3_State = "0" if led_3.value() == 0 else "1" # a compact if-else statement
         
+        
+        
         if(ldr.read_u16())<600:
             ldr_state='low'        
         if(ldr.read_u16()>900):
@@ -102,7 +116,7 @@ while True:
         print(ldr.read_u16())
         
         # Create and send response
-        stateis = led_1_State + led_2_State + led_3_State + "," + ldr_state
+        stateis = led_1_State + led_2_State + led_3_State + "," + ldr_state + "," + health
         response = html % stateis
         cl.send('HTTP/1.0 200 OK\r\nContent-type: text/html\r\n\r\n')
         cl.send(response)
@@ -111,3 +125,4 @@ while True:
     except OSError as e:
         cl.close()
         print('connection closed')
+    
